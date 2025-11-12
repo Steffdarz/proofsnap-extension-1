@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.zip
+*.local
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Private keys (NEVER commit these!)
+*.pem
+key.pem
+*.crx
+
+

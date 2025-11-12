@@ -1,0 +1,324 @@
+/**
+ * Options Page Styles
+ * Clean, modern design matching ProofSnap branding
+ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.options-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.options-header {
+  background: linear-gradient(135deg, #EC4899 0%, #3B82F6 100%);
+  color: white;
+  padding: 40px 40px 60px;
+  position: relative;
+}
+
+.header-content h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* Content */
+.options-content {
+  padding: 40px;
+  position: relative;
+  margin-top: -20px;
+  background: white;
+  border-radius: 20px 20px 0 0;
+}
+
+/* Settings Sections */
+.settings-section {
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #e5e5e7;
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+.settings-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1d1d1f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Setting Items */
+.setting-item {
+  margin-bottom: 24px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.setting-item label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1d1d1f;
+}
+
+.setting-description {
+  font-size: 13px;
+  color: #86868b;
+  margin-top: 4px;
+}
+
+/* Form Elements */
+.select-input,
+.range-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.select-input:hover,
+.range-input:hover {
+  border-color: #a1a1a6;
+}
+
+.select-input:focus,
+.range-input:focus {
+  outline: none;
+  border-color: #2E52A0;
+  box-shadow: 0 0 0 3px rgba(46, 82, 160, 0.1);
+}
+
+.select-input:disabled {
+  background: #f5f5f7;
+  color: #86868b;
+  cursor: not-allowed;
+}
+
+.range-input {
+  padding: 0;
+  height: 6px;
+  cursor: pointer;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  appearance: none;
+  background: #d2d2d7;
+  border-radius: 31px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.toggle-switch:checked {
+  background: #34c759;
+}
+
+.toggle-switch::before {
+  content: '';
+  position: absolute;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: white;
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch:checked::before {
+  transform: translateX(20px);
+}
+
+/* Buttons */
+.button-primary,
+.button-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-primary {
+  background: #2E52A0;
+  color: white;
+}
+
+.button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 82, 160, 0.4);
+}
+
+.button-secondary {
+  background: white;
+  color: #ED5D29;
+  border: 1px solid #ED5D29;
+}
+
+.button-secondary:hover {
+  background: #ED5D29;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(237, 93, 41, 0.3);
+}
+
+.button-secondary:active {
+  transform: translateY(0);
+}
+
+/* Account Info */
+.account-info {
+  background: #f5f5f7;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e5e7;
+}
+
+.info-row:last-of-type {
+  border-bottom: none;
+  margin-bottom: 16px;
+}
+
+.info-row .label {
+  font-weight: 500;
+  color: #86868b;
+}
+
+.info-row .value {
+  font-weight: 400;
+  color: #1d1d1f;
+}
+
+.auth-message {
+  text-align: center;
+  padding: 20px;
+}
+
+.auth-message p {
+  margin-bottom: 16px;
+  color: #86868b;
+}
+
+/* Warning Box */
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #856404;
+}
+
+.warning-box strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Saved Message */
+.saved-message {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #34c759;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+.saved-message.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Loading State */
+.loading,
+.error {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 16px;
+  color: #86868b;
+}
+
+.error {
+  color: #ff3b30;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .options-header {
+    padding: 30px 20px 50px;
+  }
+
+  .options-content {
+    padding: 30px 20px;
+  }
+
+  .header-content h1 {
+    font-size: 24px;
+  }
+
+  .settings-section h2 {
+    font-size: 18px;
+  }
+}
