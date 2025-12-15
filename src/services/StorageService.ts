@@ -155,6 +155,32 @@ export class StorageService {
   }
 
   // ==========================================
+  // Insufficient Credits Notification Tracking
+  // ==========================================
+
+  /**
+   * Mark that user has dismissed the insufficient credits notification
+   */
+  async setInsufficientCreditsNotificationDismissed(dismissed: boolean): Promise<void> {
+    await chrome.storage.local.set({ insufficient_credits_dismissed: dismissed });
+  }
+
+  /**
+   * Check if user has dismissed the insufficient credits notification
+   */
+  async hasInsufficientCreditsNotificationDismissed(): Promise<boolean> {
+    const result = await chrome.storage.local.get('insufficient_credits_dismissed');
+    return result.insufficient_credits_dismissed === true;
+  }
+
+  /**
+   * Clear the dismissal flag (e.g., when user successfully uploads or adds credits)
+   */
+  async clearInsufficientCreditsNotificationDismissed(): Promise<void> {
+    await chrome.storage.local.remove('insufficient_credits_dismissed');
+  }
+
+  // ==========================================
   // General Operations
   // ==========================================
 

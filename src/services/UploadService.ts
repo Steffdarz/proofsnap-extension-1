@@ -60,8 +60,10 @@ export class UploadService {
 
   /**
    * Add an asset to the upload queue
+   * @param asset - The asset to upload
+   * @param isManualRetry - Whether this is a manual retry by the user (unpauses queue)
    */
-  async addToQueue(asset: Asset): Promise<void> {
+  async addToQueue(asset: Asset, isManualRetry = false): Promise<void> {
     // Check if already in queue
     const exists = this.uploadQueue.find(a => a.id === asset.id);
     if (exists) {
@@ -71,13 +73,23 @@ export class UploadService {
 
     this.uploadQueue.push(asset);
     await this.saveQueue();
+
+    // If this is a manual retry and queue was paused, unpause it
+    // User manually retrying indicates they may have resolved the issue (e.g., added credits)
+    if (isManualRetry && this.isPaused) {
+      console.log('Unpausing upload queue for manual retry');
+      this.setPaused(false);
+    }
+
     this.processQueue();
   }
 
   /**
    * Add multiple assets to queue
+   * @param assets - The assets to upload
+   * @param isManualRetry - Whether this is a manual retry by the user (unpauses queue)
    */
-  async addMultipleToQueue(assets: Asset[]): Promise<void> {
+  async addMultipleToQueue(assets: Asset[], isManualRetry = false): Promise<void> {
     let addedCount = 0;
     for (const asset of assets) {
       const exists = this.uploadQueue.find(a => a.id === asset.id);
@@ -90,6 +102,14 @@ export class UploadService {
     if (addedCount > 0) {
       await this.saveQueue();
       console.log(`Added ${addedCount} assets to upload queue`);
+
+      // If this is a manual retry and queue was paused, unpause it
+      // User manually retrying indicates they may have resolved the issue (e.g., added credits)
+      if (isManualRetry && this.isPaused) {
+        console.log('Unpausing upload queue for manual retry');
+        this.setPaused(false);
+      }
+
       this.processQueue();
     }
   }
@@ -211,18 +231,54 @@ export class UploadService {
   private async uploadAsset(asset: Asset): Promise<void> {
     console.log('Starting upload for asset:', asset.id);
 
-    // Update status to uploading
+    await this.updateAssetStatusToUploading(asset);
+    const progressInterval = this.startProgressSimulation(asset);
+
+    try {
+      const formData = await this.prepareUploadFormData(asset);
+      const result = await this.apiClient.postWithAuth<any>('/assets/', formData);
+
+      clearInterval(progressInterval);
+      console.log('Upload successful:', result);
+
+      await this.handleUploadSuccess(asset, result);
+    } catch (error) {
+      clearInterval(progressInterval);
+      throw error;
+    }
+  }
+
+  /**
+   * Update asset status to uploading and emit initial progress
+   */
+  private async updateAssetStatusToUploading(asset: Asset): Promise<void> {
     asset.status = 'uploading';
-    await this.assetStorage.updateAsset(asset.id, { status: 'uploading' });
+
+    // Clear error metadata from previous failed upload attempts
+    if (asset.metadata?.error) {
+      delete asset.metadata.error;
+    }
+    if (asset.metadata?.errorType) {
+      delete asset.metadata.errorType;
+    }
+
+    await this.assetStorage.updateAsset(asset.id, {
+      status: 'uploading',
+      metadata: asset.metadata
+    });
     
     this.emitProgress({
       assetId: asset.id,
       progress: 0,
       status: 'uploading',
     });
+  }
 
-    // Simulate progress updates
-    const progressInterval = setInterval(() => {
+  /**
+   * Start simulating progress updates for an uploading asset
+   */
+  private startProgressSimulation(asset: Asset): ReturnType<typeof setInterval> {
+    return setInterval(() => {
       const currentProgress = asset.metadata?.uploadProgress || 0;
       if (currentProgress < 0.9) {
         const newProgress = currentProgress + 0.1;
@@ -234,66 +290,66 @@ export class UploadService {
         });
       }
     }, 500);
+  }
 
-    try {
-      // Convert data URL to Blob
-      const blob = await this.dataUrlToBlob(asset.uri);
-      
-      // Create FormData for upload
-      const formData = new FormData();
-      const filename = `screenshot_${Date.now()}.${asset.mimeType.split('/')[1]}`;
-      formData.append('asset_file', blob, filename);
+  /**
+   * Prepare FormData for asset upload
+   */
+  private async prepareUploadFormData(asset: Asset): Promise<FormData> {
+    const blob = await this.dataUrlToBlob(asset.uri);
 
-      // Add metadata
-      const signedMetadata = this.createSignedMetadata(asset);
-      formData.append('signed_metadata', signedMetadata);
-      
-      if (asset.metadata?.caption) {
-        formData.append('caption', asset.metadata.caption);
-      }
-      if (asset.metadata?.tag) {
-        formData.append('tag', asset.metadata.tag);
-      }
+    const formData = new FormData();
+    const filename = `screenshot_${Date.now()}.${asset.mimeType.split('/')[1]}`;
+    formData.append('asset_file', blob, filename);
 
-      // Upload to Numbers Protocol API
-      const result = await this.apiClient.postWithAuth<any>('/assets/', formData);
-      
-      clearInterval(progressInterval);
+    const signedMetadata = this.createSignedMetadata(asset);
+    formData.append('signed_metadata', signedMetadata);
 
-      console.log('Upload successful:', result);
-
-      // Update asset status
-      asset.status = 'uploaded';
-      asset.metadata = {
-        ...asset.metadata,
-        uploadedAt: new Date().toISOString(),
-        cid: result.cid,
-        nid: result.nid,
-        uploadProgress: 1,
-      };
-
-      await this.assetStorage.updateAsset(asset.id, {
-        status: 'uploaded',
-        metadata: asset.metadata,
-      });
-
-      this.emitProgress({
-        assetId: asset.id,
-        progress: 1,
-        status: 'uploaded',
-      });
-
-      // Delete uploaded asset from IndexedDB to save disk space
-      await this.assetStorage.deleteAsset(asset.id);
-      console.log('Deleted uploaded asset from local storage:', asset.id);
-
-      // Notify completion
-      this.emitCompletion(asset.id);
-
-    } catch (error) {
-      clearInterval(progressInterval);
-      throw error;
+    if (asset.metadata?.caption) {
+      formData.append('caption', asset.metadata.caption);
     }
+    if (asset.metadata?.tag) {
+      formData.append('tag', asset.metadata.tag);
+    }
+
+    return formData;
+  }
+
+  /**
+   * Handle successful upload: update asset, clean up, and notify
+   */
+  private async handleUploadSuccess(asset: Asset, result: any): Promise<void> {
+    // Update asset with uploaded status and metadata
+    asset.status = 'uploaded';
+    asset.metadata = {
+      ...asset.metadata,
+      uploadedAt: new Date().toISOString(),
+      cid: result.cid,
+      nid: result.nid,
+      uploadProgress: 1,
+    };
+
+    await this.assetStorage.updateAsset(asset.id, {
+      status: 'uploaded',
+      metadata: asset.metadata,
+    });
+
+    this.emitProgress({
+      assetId: asset.id,
+      progress: 1,
+      status: 'uploaded',
+    });
+
+    // Clean up: delete uploaded asset from IndexedDB to save disk space
+    await this.assetStorage.deleteAsset(asset.id);
+    console.log('Deleted uploaded asset from local storage:', asset.id);
+
+    // Clear the insufficient credits notification flag on successful upload
+    // This allows the notification to show again if they run out of credits in the future
+    await this.metadataStorage.clearInsufficientCreditsNotificationDismissed();
+
+    // Notify completion
+    this.emitCompletion(asset.id);
   }
 
   /**
@@ -303,9 +359,15 @@ export class UploadService {
     const errorMessage = error?.message || 'Upload failed';
     
     // Check for insufficient balance
+    let errorType;
     if (this.isInsufficientBalanceError(error)) {
       console.warn('Insufficient balance detected, pausing uploads');
       this.setPaused(true);
+      errorType = 'insufficient_credits';
+
+      // Clear the dismissal flag so notification can show again for this new error
+      // This allows the notification to appear when credits run out again in the future
+      await this.metadataStorage.clearInsufficientCreditsNotificationDismissed();
     }
 
     // Update asset status
@@ -313,6 +375,7 @@ export class UploadService {
     asset.metadata = {
       ...asset.metadata,
       error: errorMessage,
+      errorType,
     };
 
     await this.assetStorage.updateAsset(asset.id, {
@@ -399,7 +462,8 @@ export class UploadService {
     
     if (failedAssets.length > 0) {
       console.log(`Retrying ${failedAssets.length} failed uploads`);
-      await this.addMultipleToQueue(failedAssets);
+      // Pass isManualRetry=true to unpause queue if it was paused
+      await this.addMultipleToQueue(failedAssets, true);
     }
   }
 }
