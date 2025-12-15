@@ -174,7 +174,8 @@ export class StorageService {
   }
 
   /**
-   * Clear the dismissal flag (e.g., when user successfully uploads or adds credits)
+   * Clear the dismissal flag when a new insufficient credits error occurs
+   * This allows the notification to be shown again even if user previously dismissed it
    */
   async clearInsufficientCreditsNotificationDismissed(): Promise<void> {
     await chrome.storage.local.remove('insufficient_credits_dismissed');

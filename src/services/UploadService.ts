@@ -74,12 +74,8 @@ export class UploadService {
     this.uploadQueue.push(asset);
     await this.saveQueue();
 
-    // If this is a manual retry and queue was paused, unpause it
-    // User manually retrying indicates they may have resolved the issue (e.g., added credits)
-    if (isManualRetry && this.isPaused) {
-      console.log('Unpausing upload queue for manual retry');
-      this.setPaused(false);
-    }
+    // Unpause queue if this is a manual retry
+    this.maybeUnpauseForManualRetry(isManualRetry);
 
     this.processQueue();
   }
@@ -103,14 +99,21 @@ export class UploadService {
       await this.saveQueue();
       console.log(`Added ${addedCount} assets to upload queue`);
 
-      // If this is a manual retry and queue was paused, unpause it
-      // User manually retrying indicates they may have resolved the issue (e.g., added credits)
-      if (isManualRetry && this.isPaused) {
-        console.log('Unpausing upload queue for manual retry');
-        this.setPaused(false);
-      }
+      // Unpause queue if this is a manual retry
+      this.maybeUnpauseForManualRetry(isManualRetry);
 
       this.processQueue();
+    }
+  }
+
+  /**
+   * Unpause upload queue if user is manually retrying
+   * Manual retry indicates they may have resolved the issue (e.g., added credits)
+   */
+  private maybeUnpauseForManualRetry(isManualRetry: boolean): void {
+    if (isManualRetry && this.isPaused) {
+      console.log('Unpausing upload queue for manual retry');
+      this.setPaused(false);
     }
   }
 
@@ -344,10 +347,6 @@ export class UploadService {
     await this.assetStorage.deleteAsset(asset.id);
     console.log('Deleted uploaded asset from local storage:', asset.id);
 
-    // Clear the insufficient credits notification flag on successful upload
-    // This allows the notification to show again if they run out of credits in the future
-    await this.metadataStorage.clearInsufficientCreditsNotificationDismissed();
-
     // Notify completion
     this.emitCompletion(asset.id);
   }
@@ -365,8 +364,8 @@ export class UploadService {
       this.setPaused(true);
       errorType = 'insufficient_credits';
 
-      // Clear the dismissal flag so notification can show again for this new error
-      // This allows the notification to appear when credits run out again in the future
+      // Reset notification dismissal to show alert for this insufficient credits error
+      // User may have dismissed it previously, but needs to be notified of the new failure
       await this.metadataStorage.clearInsufficientCreditsNotificationDismissed();
     }
 
