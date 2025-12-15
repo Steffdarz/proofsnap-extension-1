@@ -120,8 +120,13 @@ function PopupApp() {
       asset => asset.status === 'failed' && asset.metadata?.errorType === 'insufficient_credits'
     );
 
+    // Early exit if notification is already showing - avoid redundant storage queries
+    if (showInsufficientCreditsNotification) {
+      return;
+    }
+
     if (hasCreditError) {
-      // Only show notification if user hasn't dismissed it yet
+      // Only query storage if we're considering showing the notification
       const dismissed = await storageService.hasInsufficientCreditsNotificationDismissed();
       if (!dismissed) {
         setShowInsufficientCreditsNotification(true);
@@ -148,7 +153,7 @@ function PopupApp() {
 
     chrome.runtime.onMessage.addListener(handleMessage);
     return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, []);
+  }, [showInsufficientCreditsNotification]); // Add dependency since checkCreditStatus uses this state
 
   if (isLoading) {
     return (
