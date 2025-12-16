@@ -48,8 +48,26 @@ export class NumbersApiManager {
   /**
    * Sign up with email and password
    */
-  async signup(email: string, password: string, username: string): Promise<void> {
+  async signup(email: string, password: string, username?: string): Promise<void> {
     const response = await this.auth.signup({ email, password, username });
+
+    if (response.auth_token) {
+      // AuthService already set the token on ApiClient
+      // Here we just handle persistent storage
+      const user = await this.auth.getCurrentUser();
+      await storageService.setAuth({
+        token: response.auth_token,
+        email: user.email,
+        username: user.username,
+      });
+    }
+  }
+
+  /**
+   * Login/Signup with Google
+   */
+  async loginGoogle(idToken: string): Promise<void> {
+    const response = await this.auth.loginGoogle(idToken);
 
     if (response.auth_token) {
       // AuthService already set the token on ApiClient
@@ -67,7 +85,7 @@ export class NumbersApiManager {
    * Clear authentication and remove stored token
    */
   async clearAuth(): Promise<void> {
-    this.auth.clearAuth();
+    await this.auth.clearAuth();
     await storageService.clearAuth();
   }
 
@@ -75,7 +93,7 @@ export class NumbersApiManager {
    * Set authentication token for all API requests
    * (Internal use - prefer login/signup methods)
    */
-  async setAuthToken(token: string): Promise<void> {
+  setAuthToken(token: string): void {
     this.auth.setAuthToken(token);
   }
 
@@ -109,9 +127,9 @@ export class NumbersApiManager {
         const statusCode = error instanceof ApiError ? error.statusCode : undefined;
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isNetworkError = errorMessage.includes('network') ||
-                               errorMessage.includes('timeout') ||
-                               errorMessage.includes('connection') ||
-                               statusCode === 0;
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('connection') ||
+          statusCode === 0;
         const isServerError = typeof statusCode === 'number' && statusCode >= 500 && statusCode < 600;
 
         if (isNetworkError || isServerError) {

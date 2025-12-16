@@ -7,7 +7,7 @@ import { ApiClient } from './ApiClient';
 type LoginRequest = { email: string; password: string };
 type LoginResponse = { auth_token: string };
 type SignupRequest = {
-  username: string;
+  username?: string;
   email: string;
   password: string;
   referral_code?: string;
@@ -74,6 +74,79 @@ export class AuthService {
   }
 
   /**
+   * Authenticate with Google using Chrome Identity API
+   */
+  /**
+   * Authenticate with Google using Chrome Identity API to get an ID Token
+   * Note: The backend requires an OIDC ID Token (JWT), not an OAuth2 Access Token.
+   * Therefore we must use launchWebAuthFlow with response_type=id_token.
+   */
+  async authenticateWithGoogle(): Promise<string> {
+    const manifest = chrome.runtime.getManifest();
+    const clientId = manifest.oauth2?.client_id;
+
+    if (!clientId) {
+      throw new Error('Google Client ID is missing in manifest.json');
+    }
+
+    const redirectUri = chrome.identity.getRedirectURL(); // e.g., https://<app-id>.chromiumapp.org/
+
+    const scopes = 'openid email profile';
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('response_type', 'id_token');
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('scope', scopes);
+    authUrl.searchParams.set('nonce', Math.random().toString(36).substring(2)); // basic nonce
+    authUrl.searchParams.set('prompt', 'select_account'); // force selection to ensure fresh login if needed
+
+    return new Promise((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        {
+          url: authUrl.toString(),
+          interactive: true,
+        },
+        (responseUrl) => {
+          if (chrome.runtime.lastError || !responseUrl) {
+            reject(chrome.runtime.lastError?.message || 'Google Auth failed or canceled');
+            return;
+          }
+
+          // Parse id_token from the hash fragment of the response URL
+          const url = new URL(responseUrl);
+          const params = new URLSearchParams(url.hash.substring(1)); // remove leading #
+          const idToken = params.get('id_token');
+
+          if (idToken) {
+            resolve(idToken);
+          } else {
+            console.error('No id_token found in response', responseUrl);
+            reject('Failed to retrieve ID token from Google');
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Login/Signup with Google
+   */
+  async loginGoogle(idToken: string): Promise<SignupResponse> {
+    // The backend endpoint /auth/users/signup-google/ handles both login and signup
+    const response = await this.apiClient.postPublic<SignupResponse>(
+      '/auth/users/signup-google/',
+      { id_token: idToken }
+    );
+
+    if (response.auth_token) {
+      this.apiClient.setAuthToken(response.auth_token);
+    }
+
+    return response;
+  }
+
+  /**
    * Request password reset
    */
   async resetPassword(resetData: ResetPasswordRequest): Promise<void> {
@@ -126,7 +199,24 @@ export class AuthService {
   /**
    * Clear authentication token from API client
    */
-  clearAuth(): void {
+  async clearAuth(): Promise<void> {
     this.apiClient.clearAuthToken();
+    try {
+      // Also attempt to clear Google cached token if it exists
+      const token = await new Promise<string | undefined>((resolve) => {
+        chrome.identity.getAuthToken({ interactive: false }, (token) => {
+          if (chrome.runtime.lastError) resolve(undefined);
+          else resolve(token);
+        });
+      });
+      if (token) {
+        await new Promise<void>((resolve) => {
+          chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+        });
+      }
+    } catch (e) {
+      // Ignore errors during cleanup
+      console.warn('Failed to clear Google auth token', e);
+    }
   }
 }
