@@ -62,7 +62,8 @@ export type MessageType =
   | 'UPLOAD_FAILED'
   | 'AUTH_STATUS_CHANGED'
   | 'SETTINGS_UPDATED'
-  | 'ADD_WATERMARK';
+  | 'ADD_WATERMARK'
+  | 'START_GOOGLE_AUTH';
 
 export interface ExtensionMessage<T = any> {
   type: MessageType;

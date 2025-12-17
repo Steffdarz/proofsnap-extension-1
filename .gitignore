@@ -27,4 +27,7 @@ Thumbs.db
 key.pem
 *.crx
 
+# Manifest (contains sensitive keys)
+manifest.json
+
 

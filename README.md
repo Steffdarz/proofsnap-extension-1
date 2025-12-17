@@ -79,6 +79,20 @@ npm install
 npm run build
 ```
 
+### Configuration
+
+To enable **Google Login** and maintain a **fixed Extension ID** (recommended), set up `manifest.json`:
+
+1. Copy the template:
+   ```bash
+   cp manifest.template.json manifest.json
+   ```
+2. Open `manifest.json` and replace the placeholders:
+   - `YOUR_OAUTH2_CLIENT_ID`: Required for **Google Login/Signup**.
+   - `YOUR_EXTENSION_PUBLIC_KEY`: Keeps your **Extension ID fixed**. Crucial for Google OAuth redirects to work consistently.
+
+> **Note**: You can skip this if you only use **Email/Password Login**. Google Auth will fail, but capturing and uploading will still work.
+
 ### Load Extension in Chrome
 
 1. Build the extension: `npm run build`

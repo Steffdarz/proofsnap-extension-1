@@ -6,49 +6,7 @@
 import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { storageService, StoredSettings } from '../services/StorageService';
-import { getNumbersApi } from '../services/NumbersApiManager';
 import './options.css';
-
-/**
- * Account Section Component
- */
-function AccountSection({
-  isAuthenticated,
-  userInfo,
-  onLogout,
-}: {
-  isAuthenticated: boolean;
-  userInfo: { email: string; username: string } | null;
-  onLogout: () => void;
-}) {
-  return (
-    <section className="settings-section">
-      <h2>👤 Account</h2>
-      {isAuthenticated && userInfo ? (
-        <div className="account-info">
-          <div className="info-row">
-            <span className="label">Email:</span>
-            <span className="value">{userInfo.email}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Username:</span>
-            <span className="value">{userInfo.username}</span>
-          </div>
-          <button className="button-secondary" onClick={onLogout}>
-            Logout
-          </button>
-        </div>
-      ) : (
-        <div className="auth-message">
-          <p>Not logged in</p>
-          <button className="button-primary" onClick={() => chrome.runtime.openOptionsPage()}>
-            Login
-          </button>
-        </div>
-      )}
-    </section>
-  );
-}
 
 /**
  * Watermark Settings Component
@@ -62,7 +20,13 @@ function WatermarkSettings({
 }) {
   return (
     <section className="settings-section">
-      <h2>🕐 Timestamp Watermark</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8, verticalAlign: 'text-bottom' }} aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Timestamp Watermark
+      </h2>
 
       <div className="setting-item">
         <div className="setting-header">
@@ -113,7 +77,14 @@ function WebsiteInfoSettings({
 }) {
   return (
     <section className="settings-section">
-      <h2>🌐 Website Information</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8, verticalAlign: 'text-bottom' }} aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        Website Information
+      </h2>
 
       <div className="setting-item">
         <div className="setting-header">
@@ -147,7 +118,13 @@ function CaptureSettings({
 }) {
   return (
     <section className="settings-section">
-      <h2>📸 Capture Settings</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8, verticalAlign: 'text-bottom' }} aria-hidden="true">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        Capture Settings
+      </h2>
 
       {/* TODO: Implement capture mode selection in future
       <div className="setting-item">
@@ -219,7 +196,12 @@ function UploadSettings({
 }) {
   return (
     <section className="settings-section">
-      <h2>☁️ Upload Settings</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8, verticalAlign: 'text-bottom' }} aria-hidden="true">
+          <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+        </svg>
+        Upload Settings
+      </h2>
 
       <div className="setting-item">
         <div className="setting-header">
@@ -245,8 +227,6 @@ function UploadSettings({
  */
 function OptionsApp() {
   const [settings, setSettings] = useState<StoredSettings | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userInfo, setUserInfo] = useState<{ email: string; username: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -256,15 +236,8 @@ function OptionsApp() {
   async function loadData() {
     setLoading(true);
     try {
-      const [storedSettings, user] = await Promise.all([
-        storageService.getSettings(),
-        storageService.getAuth(),
-      ]);
-      const numbersApi = await getNumbersApi();
-      const authenticated = numbersApi.auth.isAuthenticated();
+      const storedSettings = await storageService.getSettings();
       setSettings(storedSettings);
-      setIsAuthenticated(authenticated);
-      setUserInfo(user);
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {
@@ -292,15 +265,6 @@ function OptionsApp() {
     }
   }
 
-  async function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-      const numbersApi = await getNumbersApi();
-      await numbersApi.clearAuth();
-      setIsAuthenticated(false);
-      setUserInfo(null);
-    }
-  }
-
   if (loading) {
     return (
       <div className="options-container">
@@ -321,24 +285,30 @@ function OptionsApp() {
     <div className="options-container">
       <header className="options-header">
         <div className="header-content">
-          <h1>⚙️ ProofSnap Settings</h1>
+          <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 10 }} aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            ProofSnap Settings
+          </h1>
           <p className="subtitle">Snap once. Prove forever.</p>
         </div>
       </header>
 
       <div className="options-content">
-        <AccountSection
-          isAuthenticated={isAuthenticated}
-          userInfo={userInfo}
-          onLogout={handleLogout}
-        />
         <WatermarkSettings settings={settings} onSave={handleSaveSettings} />
         <WebsiteInfoSettings settings={settings} onSave={handleSaveSettings} />
         <CaptureSettings settings={settings} onSave={handleSaveSettings} />
         <UploadSettings settings={settings} onSave={handleSaveSettings} />
 
         {/* Save indicator */}
-        <div className="saved-message">✓ Settings saved</div>
+        <div className="saved-message">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }} aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Settings saved
+        </div>
       </div>
     </div>
   );

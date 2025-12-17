@@ -41,7 +41,7 @@ Promise.all([
  */
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('Extension installed:', details.reason);
-  
+
   if (details.reason === 'install') {
     // Set default settings on first install
     metadataStorage.setSettings({
@@ -67,7 +67,7 @@ chrome.runtime.onInstalled.addListener((details) => {
  */
 chrome.commands.onCommand.addListener(async (command) => {
   console.log('Command received:', command);
-  
+
   if (command === 'capture-screenshot') {
     await handleScreenshotCapture('visible');
   }
@@ -99,6 +99,31 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
         .then(() => sendResponse({ success: true }))
         .catch((error) => sendResponse({ success: false, error: error.message }));
       return true;
+
+    case 'START_GOOGLE_AUTH':
+      console.log('Starting Google Auth in background...');
+      (async () => {
+        try {
+          const numbersApi = await getNumbersApi();
+
+          // 1. Get ID Token via Chrome Identity (interactive flow)
+          console.log('Background: Requesting Google ID Token...');
+          const token = await numbersApi.auth.authenticateWithGoogle();
+          console.log('Background: Got ID Token. Logging in to backend...');
+
+          // 2. Exchange ID Token for numbers protocol auth token
+          await numbersApi.loginGoogle(token);
+          console.log('Background: Google Login successful.');
+
+          sendResponse({ success: true });
+        } catch (error: any) {
+          console.error('Background: Google Auth failed:', error);
+          const errorMessage = error.message || 'Google Auth failed';
+          await storageService.setGoogleAuthError(errorMessage);
+          sendResponse({ success: false, error: errorMessage });
+        }
+      })();
+      return true; // Keep channel open for async response
 
     default:
       console.warn('Unknown message type:', message.type);

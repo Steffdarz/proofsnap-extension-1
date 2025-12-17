@@ -182,6 +182,29 @@ export class StorageService {
   }
 
   // ==========================================
+  // Google Auth Error Persistence
+  // ==========================================
+
+  /**
+   * Set Google Auth Error message
+   */
+  async setGoogleAuthError(message: string): Promise<void> {
+    await chrome.storage.local.set({ google_auth_error: message });
+  }
+
+  /**
+   * Get and clear Google Auth Error message
+   */
+  async getAndClearGoogleAuthError(): Promise<string | null> {
+    const result = await chrome.storage.local.get('google_auth_error');
+    if (result.google_auth_error) {
+      await chrome.storage.local.remove('google_auth_error');
+      return result.google_auth_error;
+    }
+    return null;
+  }
+
+  // ==========================================
   // General Operations
   // ==========================================
 

@@ -37,6 +37,8 @@ body {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
 }
 
 .subtitle {
