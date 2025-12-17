@@ -74,9 +74,6 @@ export class AuthService {
   }
 
   /**
-   * Authenticate with Google using Chrome Identity API
-   */
-  /**
    * Authenticate with Google using Chrome Identity API to get an ID Token
    * Note: The backend requires an OIDC ID Token (JWT), not an OAuth2 Access Token.
    * Therefore we must use launchWebAuthFlow with response_type=id_token.
@@ -94,11 +91,16 @@ export class AuthService {
     const scopes = 'openid email profile';
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
 
+    // Generate cryptographically secure nonce
+    const array = new Uint32Array(4);
+    crypto.getRandomValues(array);
+    const nonce = Array.from(array, dec => dec.toString(36)).join('');
+
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('response_type', 'id_token');
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', scopes);
-    authUrl.searchParams.set('nonce', Math.random().toString(36).substring(2)); // basic nonce
+    authUrl.searchParams.set('nonce', nonce); // secure nonce
     authUrl.searchParams.set('prompt', 'select_account'); // force selection to ensure fresh login if needed
 
     return new Promise((resolve, reject) => {
@@ -201,22 +203,5 @@ export class AuthService {
    */
   async clearAuth(): Promise<void> {
     this.apiClient.clearAuthToken();
-    try {
-      // Also attempt to clear Google cached token if it exists
-      const token = await new Promise<string | undefined>((resolve) => {
-        chrome.identity.getAuthToken({ interactive: false }, (token) => {
-          if (chrome.runtime.lastError) resolve(undefined);
-          else resolve(token);
-        });
-      });
-      if (token) {
-        await new Promise<void>((resolve) => {
-          chrome.identity.removeCachedAuthToken({ token }, () => resolve());
-        });
-      }
-    } catch (e) {
-      // Ignore errors during cleanup
-      console.warn('Failed to clear Google auth token', e);
-    }
   }
 }

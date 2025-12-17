@@ -50,8 +50,13 @@ const AuthForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             // Send message to background script
             const response = await chrome.runtime.sendMessage({ type: 'START_GOOGLE_AUTH' });
 
-            if (!response.success) {
-                throw new Error(response.error || 'Google Auth failed');
+            // Check if message sending failed (e.g. background script not ready)
+            if (chrome.runtime.lastError) {
+                throw new Error('Failed to communicate with background service: ' + chrome.runtime.lastError.message);
+            }
+
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Google Auth failed');
             }
 
             // If we got a success response here, it means the auth flow finished
@@ -71,46 +76,30 @@ const AuthForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     };
 
     return (
-        <div className="auth-container" style={{ padding: 16 }}>
-            <div className="auth-tabs" style={{ display: 'flex', marginBottom: 16, borderBottom: '1px solid #ddd' }}>
+        <div className="auth-container">
+            <div className="auth-tabs">
                 <button
                     onClick={() => setIsLoginMode(true)}
-                    style={{
-                        flex: 1,
-                        padding: '8px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: isLoginMode ? '2px solid #000' : 'none',
-                        fontWeight: isLoginMode ? 'bold' : 'normal',
-                        cursor: 'pointer'
-                    }}
+                    className={`auth-tab ${isLoginMode ? 'active' : ''}`}
                 >
                     Login
                 </button>
                 <button
                     onClick={() => setIsLoginMode(false)}
-                    style={{
-                        flex: 1,
-                        padding: '8px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: !isLoginMode ? '2px solid #000' : 'none',
-                        fontWeight: !isLoginMode ? 'bold' : 'normal',
-                        cursor: 'pointer'
-                    }}
+                    className={`auth-tab ${!isLoginMode ? 'active' : ''}`}
                 >
                     Sign Up
                 </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="auth-form">
                 <input
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
-                    style={{ width: '100%', marginBottom: 8, padding: 8, boxSizing: 'border-box' }}
+                    className="auth-input"
                 />
                 <input
                     type="password"
@@ -118,34 +107,23 @@ const AuthForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
-                    style={{ width: '100%', marginBottom: 8, padding: 8, boxSizing: 'border-box' }}
+                    className="auth-input"
                 />
 
-                <button type="submit" disabled={loading} style={{ width: '100%', padding: 8, marginTop: 8, cursor: 'pointer' }}>
+                <button type="submit" disabled={loading} className="auth-submit-button">
                     {loading ? (isLoginMode ? 'Logging in...' : 'Signing up...') : (isLoginMode ? 'Login' : 'Sign Up')}
                 </button>
             </form>
 
-            <div style={{ marginTop: 16, textAlign: 'center' }}>
-                <div style={{ borderTop: '1px solid #eee', position: 'relative', margin: '16px 0' }}>
-                    <span style={{ background: '#fff', padding: '0 8px', position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', color: '#888', fontSize: '12px' }}>OR</span>
+            <div className="auth-divider">
+                <div className="auth-divider-line">
+                    <span className="auth-divider-text">OR</span>
                 </div>
                 <button
                     type="button"
                     onClick={handleGoogleAuth}
                     disabled={loading}
-                    style={{
-                        width: '100%',
-                        padding: 8,
-                        backgroundColor: '#fff',
-                        color: '#333',
-                        border: '1px solid #ccc',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer'
-                    }}
+                    className="google-auth-button"
                 >
                     {/* Simple Google Icon SVG */}
                     <svg width="18" height="18" viewBox="0 0 18 18">
@@ -155,7 +133,7 @@ const AuthForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 </button>
             </div>
 
-            {error && <div style={{ color: 'red', marginTop: 12, textAlign: 'center', fontSize: '14px' }}>{error}</div>}
+            {error && <div className="auth-error">{error}</div>}
         </div>
     );
 };

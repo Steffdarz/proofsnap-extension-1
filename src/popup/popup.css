@@ -9,6 +9,12 @@
   background: #ffffff;
 }
 
+.auth-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -414,4 +420,128 @@
 .secondary-button:hover {
   background: #F3F4F6;
   border-color: #9CA3AF;
+}
+
+/* Auth Form Styles */
+.auth-container {
+  padding: 16px;
+}
+
+.auth-tabs {
+  display: flex;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: normal;
+  transition: all 0.2s;
+}
+
+.auth-tab.active {
+  border-bottom-color: #000;
+  font-weight: bold;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.auth-submit-button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  background: #2E52A0;
+  /* ProofSnap Blue */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.auth-submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.auth-divider-line {
+  border-top: 1px solid #eee;
+  position: relative;
+  margin: 16px 0;
+}
+
+.auth-divider-text {
+  background: #fff;
+  padding: 0 8px;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #888;
+  font-size: 12px;
+}
+
+.google-auth-button {
+  width: 100%;
+  padding: 8px;
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.google-auth-button:hover:not(:disabled) {
+  background-color: #f8f9fa;
+}
+
+.google-auth-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  color: red;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
