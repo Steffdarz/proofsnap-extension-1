@@ -188,8 +188,9 @@ function PopupApp() {
         </div>
         <div className="content auth-content">
           <AuthForm onLogin={() => {
-            // After login, reload initial data
-            loadInitialData();
+            // Force reload to ensure fresh API instance and UI state.
+            // This is consistent with handleLogout and fixes stale singleton issues.
+            window.location.reload();
           }} />
         </div>
       </div>
