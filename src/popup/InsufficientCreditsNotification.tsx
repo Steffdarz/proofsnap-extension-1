@@ -10,7 +10,7 @@ interface InsufficientCreditsNotificationProps {
 export default function InsufficientCreditsNotification({ onClose }: InsufficientCreditsNotificationProps) {
   const handleGetCredits = () => {
     chrome.tabs.create({
-      url: 'https://dashboard.captureapp.xyz/main?tab=wallet',
+      url: 'https://captureapp.xyz/pricing',
     });
     onClose();
   };
