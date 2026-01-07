@@ -45,6 +45,24 @@ function WatermarkSettings({
       </div>
 
       <div className="setting-item">
+        <label htmlFor="timestampFormat">Timestamp format</label>
+        <select
+          id="timestampFormat"
+          value={settings.timestampFormat}
+          onChange={(e) => onSave({ timestampFormat: e.target.value as 'full' | 'compact' | 'time-only' })}
+          disabled={!settings.includeTimestamp}
+          className="select-input"
+        >
+          <option value="full">Full (Time + Date + Day)</option>
+          <option value="compact">Compact (Time + Short Date)</option>
+          <option value="time-only">Time Only</option>
+        </select>
+        <p className="setting-description">
+          Choose how much information to display
+        </p>
+      </div>
+
+      <div className="setting-item">
         <label htmlFor="timestampSize">Timestamp size</label>
         <select
           id="timestampSize"
@@ -59,6 +77,44 @@ function WatermarkSettings({
         </select>
         <p className="setting-description">
           Adjust the size of the timestamp watermark
+        </p>
+      </div>
+
+      <div className="setting-item">
+        <label htmlFor="timestampPosition">Timestamp position</label>
+        <select
+          id="timestampPosition"
+          value={settings.timestampPosition}
+          onChange={(e) => onSave({ timestampPosition: e.target.value as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' })}
+          disabled={!settings.includeTimestamp}
+          className="select-input"
+        >
+          <option value="top-left">Top Left</option>
+          <option value="top-right">Top Right</option>
+          <option value="bottom-left">Bottom Left</option>
+          <option value="bottom-right">Bottom Right</option>
+        </select>
+        <p className="setting-description">
+          Choose where to place the timestamp on the screenshot
+        </p>
+      </div>
+
+      <div className="setting-item">
+        <label htmlFor="timestampOpacity">
+          Timestamp opacity: {Math.round((settings.timestampOpacity ?? 1) * 100)}%
+        </label>
+        <input
+          id="timestampOpacity"
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round((settings.timestampOpacity ?? 1) * 100)}
+          onChange={(e) => onSave({ timestampOpacity: parseInt(e.target.value) / 100 })}
+          disabled={!settings.includeTimestamp}
+          className="range-input"
+        />
+        <p className="setting-description">
+          Adjust transparency (0% = invisible, 100% = fully visible)
         </p>
       </div>
     </section>

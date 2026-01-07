@@ -36,7 +36,8 @@ export default defineConfig({
         popup: resolve(__dirname, 'src/popup/popup.html'),
         options: resolve(__dirname, 'src/options/options.html'),
         background: resolve(__dirname, 'src/background/service-worker.ts'),
-        offscreen: resolve(__dirname, 'src/offscreen/offscreen.ts')
+        offscreen: resolve(__dirname, 'src/offscreen/offscreen.ts'),
+        'content/selection-overlay': resolve(__dirname, 'src/content/selection-overlay.ts')
       },
       output: {
         entryFileNames: '[name].js',

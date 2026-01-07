@@ -9,7 +9,8 @@
         "tabs",
         "offscreen",
         "notifications",
-        "identity"
+        "identity",
+        "scripting"
     ],
     "oauth2": {
         "client_id": "YOUR_OAUTH2_CLIENT_ID",
@@ -21,7 +22,8 @@
     },
     "key": "YOUR_EXTENSION_PUBLIC_KEY",
     "host_permissions": [
-        "https://api.numbersprotocol.io/*"
+        "https://api.numbersprotocol.io/*",
+        "<all_urls>"
     ],
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'"

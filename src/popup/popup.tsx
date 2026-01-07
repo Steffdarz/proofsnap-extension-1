@@ -20,6 +20,7 @@ function PopupApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [capturing, setCapturing] = useState(false);
+  const [captureMode, setCaptureMode] = useState<'visible' | 'selection'>('visible');
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [showInsufficientCreditsNotification, setShowInsufficientCreditsNotification] = useState(false);
@@ -60,13 +61,13 @@ function PopupApp() {
     }
   }
 
-  async function handleCapture() {
+  async function handleCapture(mode: 'visible' | 'selection' = captureMode) {
     setCapturing(true);
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'CAPTURE_SCREENSHOT',
         payload: {
-          mode: 'visible',
+          mode: mode,
         },
       });
 
@@ -75,6 +76,9 @@ function PopupApp() {
         // Reload assets from IndexedDB
         const assets = await indexedDBService.getAllAssets();
         setAssets(assets);
+      } else if (response.cancelled) {
+        // User cancelled selection - do nothing
+        console.log('Screenshot cancelled');
       } else {
         console.error('Capture failed:', response.error);
         alert('Failed to capture screenshot: ' + response.error);
@@ -214,6 +218,8 @@ function PopupApp() {
 
       <CaptureSection
         capturing={capturing}
+        captureMode={captureMode}
+        onCaptureMode={setCaptureMode}
         onCapture={handleCapture}
       />
 
@@ -286,16 +292,90 @@ function PopupHeader({
  */
 function CaptureSection({
   capturing,
+  captureMode,
+  onCaptureMode,
   onCapture
 }: {
   capturing: boolean;
-  onCapture: () => void;
+  captureMode: 'visible' | 'selection';
+  onCaptureMode: (mode: 'visible' | 'selection') => void;
+  onCapture: (mode?: 'visible' | 'selection') => void;
 }) {
   return (
     <div className="capture-section">
+      {/* Capture Mode Toggle */}
+      <div className="capture-mode-toggle" style={{ 
+        display: 'flex', 
+        gap: '4px', 
+        marginBottom: '12px',
+        background: 'rgba(0, 0, 0, 0.1)',
+        borderRadius: '8px',
+        padding: '4px'
+      }}>
+        <button
+          className={`mode-button ${captureMode === 'visible' ? 'active' : ''}`}
+          onClick={() => onCaptureMode('visible')}
+          disabled={capturing}
+          title="Capture visible area"
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            background: captureMode === 'visible' ? 'white' : 'transparent',
+            color: captureMode === 'visible' ? '#1a1a1a' : '#666',
+            boxShadow: captureMode === 'visible' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          Full Page
+        </button>
+        <button
+          className={`mode-button ${captureMode === 'selection' ? 'active' : ''}`}
+          onClick={() => onCaptureMode('selection')}
+          disabled={capturing}
+          title="Select area to capture"
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            background: captureMode === 'selection' ? 'white' : 'transparent',
+            color: captureMode === 'selection' ? '#1a1a1a' : '#666',
+            boxShadow: captureMode === 'selection' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 3v4M3 5h4M21 5h-4M19 3v4M5 21v-4M3 19h4M21 19h-4M19 21v-4"></path>
+            <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+          </svg>
+          Select Area
+        </button>
+      </div>
+
       <button
         className="capture-button"
-        onClick={onCapture}
+        onClick={() => onCapture()}
         disabled={capturing}
         aria-label="Capture screenshot"
       >
@@ -311,7 +391,7 @@ function CaptureSection({
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                 <circle cx="12" cy="13" r="4"></circle>
               </svg>
-              Snap
+              Snap {captureMode === 'selection' ? 'Selection' : ''}
             </>
           )}
         </div>

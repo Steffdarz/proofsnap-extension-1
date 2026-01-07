@@ -21,6 +21,9 @@ export interface StoredSettings {
   includeTimestamp: boolean;
   includeWebsiteInfo: boolean;
   timestampSize: 'small' | 'medium' | 'large';
+  timestampFormat: 'full' | 'compact' | 'time-only';
+  timestampOpacity: number; // 0.3 to 1.0
+  timestampPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   defaultCaptureMode: 'visible' | 'selection' | 'fullpage';
   screenshotFormat: 'png' | 'jpeg';
   screenshotQuality: number;
@@ -35,6 +38,9 @@ const DEFAULT_SETTINGS: StoredSettings = {
   includeTimestamp: true,
   includeWebsiteInfo: true,
   timestampSize: 'medium',
+  timestampFormat: 'full',
+  timestampOpacity: 1.0,
+  timestampPosition: 'top-left',
   defaultCaptureMode: 'visible',
   screenshotFormat: 'png',
   screenshotQuality: 90,
