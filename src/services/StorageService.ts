@@ -27,6 +27,11 @@ export interface StoredSettings {
   defaultCaptureMode: 'visible' | 'selection' | 'fullpage';
   screenshotFormat: 'png' | 'jpeg';
   screenshotQuality: number;
+  // Hunt Mode settings
+  huntModeEnabled: boolean;
+  huntModeEndDate: string; // ISO date string
+  huntModeHashtags: string;
+  huntModeMessage: string;
 }
 
 /**
@@ -44,6 +49,11 @@ const DEFAULT_SETTINGS: StoredSettings = {
   defaultCaptureMode: 'visible',
   screenshotFormat: 'png',
   screenshotQuality: 90,
+  // Hunt Mode defaults
+  huntModeEnabled: false,
+  huntModeEndDate: '2026-02-28',
+  huntModeHashtags: '#ProofSnapHunt #AIHunt',
+  huntModeMessage: '🎯 I spotted this satisfying!',
 };
 
 /**
@@ -119,11 +129,14 @@ export class StorageService {
 
   /**
    * Get user settings
+   * Merges saved settings with defaults to ensure new fields are always present
    */
   async getSettings(): Promise<StoredSettings> {
     const result = await chrome.storage.local.get('user_settings');
     if (result.user_settings) {
-      return JSON.parse(result.user_settings);
+      const saved = JSON.parse(result.user_settings);
+      // Merge with defaults to ensure new fields are present
+      return { ...DEFAULT_SETTINGS, ...saved };
     }
     return DEFAULT_SETTINGS;
   }
@@ -206,6 +219,29 @@ export class StorageService {
     if (result.google_auth_error) {
       await chrome.storage.local.remove('google_auth_error');
       return result.google_auth_error;
+    }
+    return null;
+  }
+
+  // ==========================================
+  // Hunt Mode Pending Share
+  // ==========================================
+
+  /**
+   * Store a pending share prompt (for when upload completes while popup is closed)
+   */
+  async setPendingShare(nid: string): Promise<void> {
+    await chrome.storage.local.set({ pending_hunt_share: nid });
+  }
+
+  /**
+   * Get and clear pending share prompt
+   */
+  async getAndClearPendingShare(): Promise<string | null> {
+    const result = await chrome.storage.local.get('pending_hunt_share');
+    if (result.pending_hunt_share) {
+      await chrome.storage.local.remove('pending_hunt_share');
+      return result.pending_hunt_share;
     }
     return null;
   }

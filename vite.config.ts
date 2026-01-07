@@ -20,6 +20,10 @@ export default defineConfig({
         {
           src: 'src/offscreen/offscreen.html',
           dest: 'src/offscreen'
+        },
+        {
+          src: 'src/share/share.html',
+          dest: '.'
         }
       ]
     })
@@ -37,6 +41,7 @@ export default defineConfig({
         options: resolve(__dirname, 'src/options/options.html'),
         background: resolve(__dirname, 'src/background/service-worker.ts'),
         offscreen: resolve(__dirname, 'src/offscreen/offscreen.ts'),
+        share: resolve(__dirname, 'src/share/share.tsx'),
         'content/selection-overlay': resolve(__dirname, 'src/content/selection-overlay.ts')
       },
       output: {

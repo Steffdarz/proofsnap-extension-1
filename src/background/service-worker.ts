@@ -56,6 +56,11 @@ chrome.runtime.onInstalled.addListener((details) => {
       defaultCaptureMode: 'visible',
       screenshotFormat: 'png',
       screenshotQuality: 90,
+      // Hunt Mode defaults
+      huntModeEnabled: false,
+      huntModeEndDate: '2026-02-28',
+      huntModeHashtags: '#ProofSnapHunt #AIHunt',
+      huntModeMessage: '🎯 I spotted this satisfying!',
     });
 
     // Open welcome page

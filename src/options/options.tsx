@@ -241,6 +241,100 @@ function CaptureSettings({
 }
 
 /**
+ * Hunt Mode Settings Component
+ * Special sharing mode for AI Hunt events
+ */
+function HuntModeSettings({
+  settings,
+  onSave,
+}: {
+  settings: StoredSettings;
+  onSave: (updates: Partial<StoredSettings>) => void;
+}) {
+  const endDate = new Date(settings.huntModeEndDate);
+  const now = new Date();
+  const isExpired = endDate < now;
+  const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  return (
+    <section className="settings-section hunt-mode-section">
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8, verticalAlign: 'text-bottom' }} aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+        </svg>
+        🎯 Hunt Mode
+        {!isExpired && (
+          <span className="hunt-badge">{daysLeft} days left</span>
+        )}
+      </h2>
+
+      <div className="hunt-mode-banner">
+        <p>
+          <strong>AI Hunt Event!</strong> Enable Hunt Mode to get share buttons after each snap.
+          Share your ProofSnap captures on X to participate in the event!
+        </p>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-header">
+          <label htmlFor="huntModeEnabled">Enable Hunt Mode</label>
+          <input
+            id="huntModeEnabled"
+            type="checkbox"
+            checked={settings.huntModeEnabled}
+            onChange={(e) => onSave({ huntModeEnabled: e.target.checked })}
+            className="toggle-switch"
+            disabled={isExpired}
+          />
+        </div>
+        <p className="setting-description">
+          {isExpired 
+            ? 'This event has ended. Stay tuned for future events!'
+            : 'Show share buttons after each successful upload'
+          }
+        </p>
+      </div>
+
+      {settings.huntModeEnabled && !isExpired && (
+        <>
+          <div className="setting-item">
+            <label htmlFor="huntModeMessage">Share message</label>
+            <input
+              id="huntModeMessage"
+              type="text"
+              value={settings.huntModeMessage}
+              onChange={(e) => onSave({ huntModeMessage: e.target.value })}
+              className="text-input"
+              placeholder="🎯 I spotted this!"
+            />
+            <p className="setting-description">
+              Custom message for your shares (appears before the link)
+            </p>
+          </div>
+
+          <div className="setting-item">
+            <label htmlFor="huntModeHashtags">Hashtags</label>
+            <input
+              id="huntModeHashtags"
+              type="text"
+              value={settings.huntModeHashtags}
+              onChange={(e) => onSave({ huntModeHashtags: e.target.value })}
+              className="text-input"
+              placeholder="#ProofSnapHunt #AIHunt"
+            />
+            <p className="setting-description">
+              Hashtags to include in your shares
+            </p>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+/**
  * Upload Settings Component
  */
 function UploadSettings({
@@ -353,6 +447,7 @@ function OptionsApp() {
       </header>
 
       <div className="options-content">
+        <HuntModeSettings settings={settings} onSave={handleSaveSettings} />
         <WatermarkSettings settings={settings} onSave={handleSaveSettings} />
         <WebsiteInfoSettings settings={settings} onSave={handleSaveSettings} />
         <CaptureSettings settings={settings} onSave={handleSaveSettings} />

@@ -13,6 +13,7 @@ export interface UploadProgress {
   progress: number; // 0-1
   status: 'uploading' | 'uploaded' | 'failed';
   error?: string;
+  nid?: string; // Numbers ID for uploaded assets
 }
 
 /**
@@ -337,10 +338,28 @@ export class UploadService {
       metadata: asset.metadata,
     });
 
+    // Check if Hunt Mode is enabled and open share page
+    if (result.nid) {
+      const settings = await this.metadataStorage.getSettings();
+      const endDate = new Date(settings.huntModeEndDate);
+      const now = new Date();
+      const isHuntModeActive = settings.huntModeEnabled && endDate > now;
+      
+      if (isHuntModeActive) {
+        console.log('[Hunt Mode] Opening share page for nid:', result.nid);
+        // Open share page in new tab
+        chrome.tabs.create({
+          url: chrome.runtime.getURL(`share.html?nid=${result.nid}`),
+          active: true,
+        });
+      }
+    }
+
     this.emitProgress({
       assetId: asset.id,
       progress: 1,
       status: 'uploaded',
+      nid: result.nid,
     });
 
     // Clean up: delete uploaded asset from IndexedDB to save disk space
