@@ -34,15 +34,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate manifest.json from template
-        run: node scripts/generate-manifest.js
-        env:
-          OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
-          EXTENSION_KEY: ${{ vars.EXTENSION_KEY }}
-
-      - name: Run type check
-        run: npm run type-check
-
       - name: Bump version
         id: bump
         run: |
@@ -52,6 +43,15 @@ jobs:
           OLD_VERSION=$(grep "OLD_VERSION=" bump_output.txt | cut -d'=' -f2)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "old_version=$OLD_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate manifest.json from template
+        run: node scripts/generate-manifest.js
+        env:
+          OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          EXTENSION_KEY: ${{ vars.EXTENSION_KEY }}
+
+      - name: Run type check
+        run: npm run type-check
 
       - name: Build and package extension
         id: package
