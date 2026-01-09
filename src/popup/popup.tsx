@@ -65,11 +65,8 @@ function PopupApp() {
 
       // Load Hunt Mode settings
       const settings = await storageService.getSettings();
-      const endDate = new Date(settings.huntModeEndDate);
-      const now = new Date();
-      const isExpired = endDate < now;
-      const huntModeActive = settings.huntModeEnabled && !isExpired;
-      console.log('[Hunt Mode Popup] Settings:', { huntModeEnabled: settings.huntModeEnabled, endDate: settings.huntModeEndDate, isExpired, huntModeActive });
+      const huntModeActive = settings.huntModeEnabled;
+      console.log('[Hunt Mode Popup] Settings:', { huntModeEnabled: settings.huntModeEnabled, huntModeActive });
       setHuntMode({
         enabled: huntModeActive,
         message: settings.huntModeMessage,

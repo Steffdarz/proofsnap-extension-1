@@ -347,17 +347,10 @@ export class UploadService {
       try {
         const settings = await this.metadataStorage.getSettings();
         console.log('[Hunt Mode] Settings loaded:', { 
-          huntModeEnabled: settings.huntModeEnabled, 
-          endDate: settings.huntModeEndDate 
+          huntModeEnabled: settings.huntModeEnabled
         });
         
-        const endDate = new Date(settings.huntModeEndDate);
-        const now = new Date();
-        const isHuntModeActive = settings.huntModeEnabled && endDate > now;
-        
-        console.log('[Hunt Mode] Check:', { isHuntModeActive, endDate: endDate.toISOString(), now: now.toISOString() });
-        
-        if (isHuntModeActive) {
+        if (settings.huntModeEnabled) {
           console.log('[Hunt Mode] Opening share page for nid:', nid);
           // Open share page in new tab
           const shareUrl = chrome.runtime.getURL(`share.html?nid=${nid}`);

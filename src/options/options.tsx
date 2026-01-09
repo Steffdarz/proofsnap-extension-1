@@ -337,11 +337,6 @@ function HuntModeSettings({
   settings: StoredSettings;
   onSave: (updates: Partial<StoredSettings>) => void;
 }) {
-  const endDate = new Date(settings.huntModeEndDate);
-  const now = new Date();
-  const isExpired = endDate < now;
-  const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
   return (
     <section className="settings-section hunt-mode-section">
       <h2>
@@ -351,9 +346,6 @@ function HuntModeSettings({
           <line x1="2" y1="12" x2="22" y2="12"></line>
         </svg>
         🎯 Hunt Mode
-        {!isExpired && (
-          <span className="hunt-badge">{daysLeft} days left</span>
-        )}
       </h2>
 
       <div className="hunt-mode-banner">
@@ -372,18 +364,14 @@ function HuntModeSettings({
             checked={settings.huntModeEnabled}
             onChange={(e) => onSave({ huntModeEnabled: e.target.checked })}
             className="toggle-switch"
-            disabled={isExpired}
           />
         </div>
         <p className="setting-description">
-          {isExpired 
-            ? 'This event has ended. Stay tuned for future events!'
-            : 'Show share buttons after each successful upload'
-          }
+          Show share buttons after each successful upload
         </p>
       </div>
 
-      {settings.huntModeEnabled && !isExpired && (
+      {settings.huntModeEnabled && (
         <>
           <div className="setting-item">
             <label htmlFor="huntModeMessage">Share message</label>
@@ -418,6 +406,7 @@ function HuntModeSettings({
       )}
     </section>
   );
+}
 }
 
 /**

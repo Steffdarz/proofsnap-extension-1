@@ -29,7 +29,6 @@ export interface StoredSettings {
   screenshotQuality: number;
   // Hunt Mode settings
   huntModeEnabled: boolean;
-  huntModeEndDate: string; // ISO date string
   huntModeHashtags: string;
   huntModeMessage: string;
 }
@@ -51,7 +50,6 @@ const DEFAULT_SETTINGS: StoredSettings = {
   screenshotQuality: 90,
   // Hunt Mode defaults
   huntModeEnabled: false,
-  huntModeEndDate: '2026-02-28',
   huntModeHashtags: '#ProofSnapHunt #AIHunt',
   huntModeMessage: '🎯 I spotted this satisfying!',
 };
