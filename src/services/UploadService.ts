@@ -309,6 +309,9 @@ export class UploadService {
     const signedMetadata = this.createSignedMetadata(asset);
     formData.append('signed_metadata', signedMetadata);
 
+    if (asset.metadata?.headline) {
+      formData.append('headline', asset.metadata.headline);
+    }
     if (asset.metadata?.caption) {
       formData.append('caption', asset.metadata.caption);
     }

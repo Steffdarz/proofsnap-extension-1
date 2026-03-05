@@ -35,6 +35,10 @@ function PopupApp() {
   const [showInsufficientCreditsNotification, setShowInsufficientCreditsNotification] = useState(false);
   const [huntMode, setHuntMode] = useState<HuntModeConfig>({ enabled: false, message: '', hashtags: '' });
   const [sharePromptAsset, setSharePromptAsset] = useState<Asset | null>(null);
+  const [pendingMetadataAsset, setPendingMetadataAsset] = useState<{
+    asset: Asset;
+    autoUpload: boolean;
+  } | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -104,6 +108,7 @@ function PopupApp() {
         type: 'CAPTURE_SCREENSHOT',
         payload: {
           mode: mode,
+          fromPopup: true,
         },
       });
 
@@ -112,6 +117,15 @@ function PopupApp() {
         // Reload assets from IndexedDB
         const assets = await indexedDBService.getAllAssets();
         setAssets(assets);
+
+        // Show metadata modal for the just-captured asset
+        const capturedAsset = assets.find((a: Asset) => a.id === response.data.assetId);
+        if (capturedAsset) {
+          setPendingMetadataAsset({
+            asset: capturedAsset,
+            autoUpload: response.data.autoUpload === true,
+          });
+        }
       } else if (response.cancelled) {
         // User cancelled selection - do nothing
         console.log('Screenshot cancelled');
@@ -144,6 +158,35 @@ function PopupApp() {
       console.error('Upload error:', error);
       alert('Failed to upload asset');
     }
+  }
+
+  async function handleMetadataSubmit(headline: string, caption: string) {
+    if (!pendingMetadataAsset) return;
+
+    const { asset, autoUpload } = pendingMetadataAsset;
+
+    // Update asset metadata in IndexedDB if user provided values
+    if (headline || caption) {
+      const updatedMetadata = { ...asset.metadata };
+      if (headline) updatedMetadata.headline = headline;
+      if (caption) updatedMetadata.caption = caption;
+
+      await indexedDBService.updateAsset(asset.id, {
+        metadata: updatedMetadata,
+      });
+    }
+
+    // Clear modal
+    setPendingMetadataAsset(null);
+
+    // Trigger upload if auto-upload was enabled
+    if (autoUpload) {
+      await handleUpload(asset.id);
+    }
+
+    // Refresh asset list
+    const updatedAssets = await indexedDBService.getAllAssets();
+    setAssets(updatedAssets);
   }
 
   function openOptions() {
@@ -284,6 +327,14 @@ function PopupApp() {
           asset={sharePromptAsset}
           huntMode={huntMode}
           onClose={() => setSharePromptAsset(null)}
+        />
+      )}
+
+      {pendingMetadataAsset && (
+        <MetadataModal
+          asset={pendingMetadataAsset.asset}
+          autoUpload={pendingMetadataAsset.autoUpload}
+          onSubmit={handleMetadataSubmit}
         />
       )}
 
@@ -713,6 +764,86 @@ function AssetThumbnail({ asset, onUpload, huntMode }: { asset: Asset; onUpload?
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Metadata Modal Component
+ * Shows after capture to allow adding optional headline and caption
+ */
+function MetadataModal({
+  asset,
+  autoUpload,
+  onSubmit,
+}: {
+  asset: Asset;
+  autoUpload: boolean;
+  onSubmit: (headline: string, caption: string) => void;
+}) {
+  const [headline, setHeadline] = useState('');
+  const [caption, setCaption] = useState('');
+
+  const handleSubmit = () => {
+    onSubmit(headline.trim(), caption.trim());
+  };
+
+  const handleSkip = () => {
+    onSubmit('', '');
+  };
+
+  return (
+    <div className="notification-overlay">
+      <div className="notification-card metadata-modal">
+        <div className="notification-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          <h3>Add Details</h3>
+        </div>
+
+        <div className="metadata-preview">
+          <img src={asset.uri} alt="Screenshot preview" />
+        </div>
+
+        <div className="notification-body">
+          <div className="metadata-field">
+            <label htmlFor="headline-input">Headline</label>
+            <input
+              id="headline-input"
+              type="text"
+              className="metadata-input"
+              placeholder="Short title for your snap"
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+              maxLength={100}
+              autoFocus
+            />
+          </div>
+          <div className="metadata-field">
+            <label htmlFor="caption-input">Caption</label>
+            <textarea
+              id="caption-input"
+              className="metadata-input metadata-textarea"
+              placeholder="Describe what this screenshot shows..."
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              maxLength={500}
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="notification-actions">
+          <button className="primary-button metadata-submit" onClick={handleSubmit}>
+            {autoUpload ? 'Save & Upload' : 'Save'}
+          </button>
+          <button className="secondary-button" onClick={handleSkip}>
+            Skip
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -77,6 +77,7 @@ export interface CaptureScreenshotMessage {
   payload: {
     mode: CaptureMode;
     options?: Partial<ScreenshotOptions>;
+    fromPopup?: boolean;
   };
 }
 

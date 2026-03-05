@@ -154,13 +154,14 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
  * Handle screenshot capture from message
  */
 async function handleScreenshotCaptureMessage(message: CaptureScreenshotMessage) {
-  const { mode, options = {} } = message.payload;
-  return await handleScreenshotCapture(mode, options);
+  const { mode, options = {}, fromPopup } = message.payload;
+  return await handleScreenshotCapture(mode, { ...options, fromPopup });
 }
 
 // Store pending selection resolve/reject callbacks
 let pendingSelectionResolve: ((value: any) => void) | null = null;
 let pendingSelectionReject: ((reason: any) => void) | null = null;
+let pendingSelectionFromPopup = false;
 
 /**
  * Handle selection mode capture
@@ -319,8 +320,9 @@ async function handleSelectionComplete(payload: any) {
     await showCaptureNotification(settings.autoUpload);
     await updateExtensionBadge();
 
-    // Auto-upload if enabled
-    if (settings.autoUpload) {
+    // Auto-upload if enabled and not initiated from popup
+    // (popup handles upload after showing headline/caption modal)
+    if (settings.autoUpload && !pendingSelectionFromPopup) {
       try {
         let numbersApi = await getNumbersApi();
         let auth = numbersApi.auth.isAuthenticated();
@@ -364,6 +366,7 @@ async function handleSelectionComplete(payload: any) {
       });
       pendingSelectionResolve = null;
       pendingSelectionReject = null;
+      pendingSelectionFromPopup = false;
     }
   } catch (error: any) {
     console.error('Failed to capture selection:', error);
@@ -371,6 +374,7 @@ async function handleSelectionComplete(payload: any) {
       pendingSelectionReject(error);
       pendingSelectionResolve = null;
       pendingSelectionReject = null;
+      pendingSelectionFromPopup = false;
     }
   }
 }
@@ -410,6 +414,7 @@ async function handleScreenshotCapture(
 
     // Handle selection mode - inject content script and wait for selection
     if (mode === 'selection') {
+      pendingSelectionFromPopup = options?.fromPopup === true;
       return await handleSelectionCapture(tab);
     }
 
@@ -533,8 +538,10 @@ async function handleScreenshotCapture(
     await showCaptureNotification(settings.autoUpload);
     await updateExtensionBadge();
 
-    // Auto-upload if enabled
-    if (settings.autoUpload) {
+    // Auto-upload if enabled and not initiated from popup
+    // (popup handles upload after showing headline/caption modal)
+    const fromPopup = options?.fromPopup === true;
+    if (settings.autoUpload && !fromPopup) {
       try {
         let numbersApi = await getNumbersApi();
         let auth = numbersApi.auth.isAuthenticated();
