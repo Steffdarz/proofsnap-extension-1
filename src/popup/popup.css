@@ -805,3 +805,33 @@
   color: #DC2626;
   font-size: 12px;
 }
+
+/* Delete button styles */
+.edit-modal-delete {
+  padding: 0 16px 16px;
+  text-align: center;
+}
+
+.edit-modal-delete .btn-delete {
+  background: transparent;
+  border: none;
+  color: #DC2626;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.edit-modal-delete .btn-delete:hover:not(:disabled) {
+  background: #FEF2F2;
+}
+
+.edit-modal-delete .btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
