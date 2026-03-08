@@ -14,6 +14,97 @@ console.log('ProofSnap background service worker loaded');
 const assetStorage = indexedDBService;
 const metadataStorage = storageService;
 
+// WebSocket connection for HTTP trigger support
+const WS_URL = 'ws://127.0.0.1:19998';
+let triggerSocket: WebSocket | null = null;
+let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Connect to WebSocket server for HTTP trigger support
+ */
+function connectTriggerServer() {
+  // Clear any existing reconnect timer
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+
+  try {
+    triggerSocket = new WebSocket(WS_URL);
+    
+    triggerSocket.onopen = () => {
+      console.log('🔌 Connected to trigger server (WebSocket)');
+    };
+
+    triggerSocket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log('📨 Trigger message received:', message);
+        
+        if (message.type === 'connected') {
+          console.log('🌐 Trigger server ready:', message.message);
+        } else if (message.action === 'capture') {
+          // Trigger screenshot capture from HTTP request
+          console.log('📸 HTTP trigger: capturing screenshot, mode:', message.mode);
+          handleScreenshotCapture(message.mode || 'visible')
+            .then((result) => {
+              // Send result back to server
+              if (triggerSocket && triggerSocket.readyState === WebSocket.OPEN) {
+                triggerSocket.send(JSON.stringify({
+                  type: 'capture_result',
+                  result: { success: true, ...result }
+                }));
+              }
+            })
+            .catch((error) => {
+              console.error('HTTP trigger capture failed:', error);
+              if (triggerSocket && triggerSocket.readyState === WebSocket.OPEN) {
+                triggerSocket.send(JSON.stringify({
+                  type: 'capture_result',
+                  result: { success: false, error: error.message }
+                }));
+              }
+            });
+        } else if (message.type === 'pong') {
+          // Keepalive response, ignore
+        }
+      } catch (e) {
+        console.error('Failed to parse trigger message:', e);
+      }
+    };
+
+    triggerSocket.onclose = () => {
+      console.log('🔌 Trigger server disconnected');
+      triggerSocket = null;
+      
+      // Attempt to reconnect after a delay
+      wsReconnectTimer = setTimeout(() => {
+        console.log('🔄 Attempting to reconnect to trigger server...');
+        connectTriggerServer();
+      }, 5000); // Retry every 5 seconds
+    };
+
+    triggerSocket.onerror = () => {
+      // Don't log error details - connection refused is expected when server isn't running
+      console.log('🔌 Trigger server not available (run proofsnap_host.py to enable HTTP triggers)');
+    };
+    
+  } catch (error) {
+    console.log('WebSocket connection failed:', error);
+    // Retry after delay
+    wsReconnectTimer = setTimeout(() => {
+      connectTriggerServer();
+    }, 10000);
+  }
+}
+
+// Keepalive ping to prevent connection timeout
+setInterval(() => {
+  if (triggerSocket && triggerSocket.readyState === WebSocket.OPEN) {
+    triggerSocket.send(JSON.stringify({ type: 'ping' }));
+  }
+}, 30000);
+
 // Initialize storage services
 Promise.all([
   assetStorage.init(),
@@ -32,6 +123,9 @@ Promise.all([
   } catch (error) {
     console.error('Failed to initialize NumbersApiManager:', error);
   }
+
+  // Connect to WebSocket trigger server (for HTTP trigger support)
+  connectTriggerServer();
 }).catch(error => {
   console.error('Failed to initialize services:', error);
 });
@@ -317,7 +411,7 @@ async function handleSelectionComplete(payload: any) {
     await assetStorage.setAsset(asset);
 
     // Show notification
-    await showCaptureNotification(settings.autoUpload);
+    await showCaptureNotification(settings.autoUpload && !pendingSelectionFromPopup);
     await updateExtensionBadge();
 
     // Auto-upload if enabled and not initiated from popup
@@ -362,7 +456,7 @@ async function handleSelectionComplete(payload: any) {
         assetId,
         dataUrl,
         timestamp: captureTime.toISOString(),
-        autoUpload: settings.autoUpload,
+        autoUpload: settings.autoUpload && !pendingSelectionFromPopup,
       });
       pendingSelectionResolve = null;
       pendingSelectionReject = null;
@@ -405,6 +499,7 @@ async function handleScreenshotCapture(
   mode: 'visible' | 'selection' | 'fullpage',
   options: any = {}
 ) {
+  const fromPopup = options?.fromPopup === true;
   try {
     // Get current active tab first
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -414,7 +509,7 @@ async function handleScreenshotCapture(
 
     // Handle selection mode - inject content script and wait for selection
     if (mode === 'selection') {
-      pendingSelectionFromPopup = options?.fromPopup === true;
+      pendingSelectionFromPopup = fromPopup;
       return await handleSelectionCapture(tab);
     }
 
@@ -535,12 +630,11 @@ async function handleScreenshotCapture(
     });
 
     // Show user feedback for quick capture
-    await showCaptureNotification(settings.autoUpload);
+    await showCaptureNotification(settings.autoUpload && !fromPopup);
     await updateExtensionBadge();
 
     // Auto-upload if enabled and not initiated from popup
     // (popup handles upload after showing headline/caption modal)
-    const fromPopup = options?.fromPopup === true;
     if (settings.autoUpload && !fromPopup) {
       try {
         let numbersApi = await getNumbersApi();
@@ -572,7 +666,7 @@ async function handleScreenshotCapture(
       assetId,
       dataUrl,
       timestamp: captureTime.toISOString(),
-      autoUpload: settings.autoUpload,
+      autoUpload: settings.autoUpload && !fromPopup,
     };
   } catch (error) {
     console.error('Screenshot capture failed:', error);
